@@ -1,0 +1,6 @@
+test.cpp
+numbers.dat
+test
+*.o
+*.py
+*.pyc
