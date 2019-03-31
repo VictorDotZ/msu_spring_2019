@@ -2,30 +2,30 @@ class Matrix
 {
     class MatrixProxy {
     public:
-        MatrixProxy(int* row, const Matrix& outer) : row(row), outer(outer) {}
+        MatrixProxy(size_t row, const Matrix* outer) : row(row), outer(outer) {}
 
-        const int& operator[](const size_t column) const {
-            if (column >= outer.columns)
+        const int operator[](const size_t column) const {
+            if (column >= outer->columns)
                 throw std::out_of_range("");
-            return this->row[column];
+            return outer->matrix[row][column];
         }
 
         int& operator[](const size_t column) {
-            if (column >= outer.columns)
+            if (column >= outer->columns)
                 throw std::out_of_range("");
-            return this->row[column];
+            return outer->matrix[row][column];
         }
 
     private:
-        int* row = nullptr;
-        const Matrix& outer;
+        size_t row;
+        const Matrix* outer;
     };
 
 public:
     Matrix(const size_t rows, const size_t columns) : rows(rows),
                                                       columns(columns) {
-        this->matrix = new int*[rows];
-        for (size_t i = 0; i < this->rows; i++)
+        matrix = new int*[rows];
+        for (size_t i = 0; i < rows; i++)
             matrix[i] = new int[columns];
     }
 
@@ -38,31 +38,31 @@ public:
     }
 
     const MatrixProxy operator[](const size_t row) const {
-        if (row >= this->rows)
+        if (row >= rows)
             throw std::out_of_range("");
-        return (MatrixProxy(this->matrix[row], *this));
+        return (MatrixProxy(row, this));
     }
 
     MatrixProxy operator[](const size_t row) {
-        if (row >= this->rows)
+        if (row >= rows)
             throw std::out_of_range("");
-        return (MatrixProxy(this->matrix[row], *this));
+        return (MatrixProxy(row, this));
     }
 
-    Matrix operator*=(const int var) {
-        for (size_t i = 0; i < this->rows; i++)
-            for (size_t j = 0; j < this->columns; j++)
-                this->matrix[i][j] *= var;
+    Matrix& operator*=(const int var) {
+        for (size_t i = 0; i < rows; i++)
+            for (size_t j = 0; j < columns; j++)
+                matrix[i][j] *= var;
         return *this;
     }
 
     bool operator==(const Matrix& matrix) const {
-        if (this->columns != matrix.getColumns())
+        if (columns != matrix.getColumns())
             return false;
-        if (this->rows != matrix.getRows())
+        if (rows != matrix.getRows())
             return false;
-        for (size_t i = 0; i < this->rows; i++)
-            for (size_t j = 0; j < this->columns; j++)
+        for (size_t i = 0; i < rows; i++)
+            for (size_t j = 0; j < columns; j++)
                 if (this->matrix[i][j] != matrix[i][j])
                     return false;
         return true;
@@ -72,8 +72,14 @@ public:
         return !(*this == matrix);
     }
 
+    virtual ~Matrix() {
+        for (size_t i = 0; i < rows; i++)
+            delete[] matrix[i];
+        delete[] matrix;
+    }
+
 private:
     int** matrix = nullptr;
-    const size_t rows = 0;
-    const size_t columns = 0;
+    const size_t rows;
+    const size_t columns;
 };
