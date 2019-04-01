@@ -72,7 +72,7 @@ public:
         return !(*this == matrix);
     }
 
-    virtual ~Matrix() {
+    ~Matrix() {
         for (size_t i = 0; i < rows; i++)
             delete[] matrix[i];
         delete[] matrix;
