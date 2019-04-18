@@ -87,7 +87,7 @@ private:
         if (!isOnlyDigit(uintFieldAsText))
             return Error::CorruptedArchive;
         else
-            value = std::atoi(uintFieldAsText.c_str());
+            value = std::stoull(uintFieldAsText);
         return Error::NoError;
     }
 
@@ -104,6 +104,8 @@ private:
     }
 
     bool isOnlyDigit(const std::string& expression) {
+        if (expression.empty())
+            return false;
         for (auto i : expression)
             if (i < '0' || i > '9')
                 return false;
