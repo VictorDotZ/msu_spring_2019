@@ -84,10 +84,14 @@ private:
     Error load(uint64_t& value) {
         std::string uintFieldAsText;
         in_ >> uintFieldAsText;
-        if (!isOnlyDigit(uintFieldAsText))
+        if (uintFieldAsText[0] == '-')
             return Error::CorruptedArchive;
-        else
+        try {
             value = std::stoull(uintFieldAsText);
+        }
+        catch (std::invalid_argument&) {
+            return Error::CorruptedArchive;
+        }
         return Error::NoError;
     }
 
@@ -101,15 +105,6 @@ private:
         else
             return Error::CorruptedArchive;
         return Error::NoError;
-    }
-
-    bool isOnlyDigit(const std::string& expression) {
-        if (expression.empty())
-            return false;
-        for (auto i : expression)
-            if (i < '0' || i > '9')
-                return false;
-        return true;
     }
 
     std::istream& in_;
