@@ -88,8 +88,13 @@ private:
 
     void createSortedChunks() {
         std::vector<T> chunkData(this->chunkSize);
-        std::ifstream input(this->inputPath_, std::ios::binary);
-        while (!input.eof()) {
+        std::ifstream input(this->inputPath_, std::ios::binary | std::ios::ate);
+        size_t fileLength = input.tellg() / sizeof(T);
+        input.seekg(0);
+        while (!input.eof() && this->chunkSize == chunkData.size()) {
+            if (fileLength - input.tellg() / sizeof(T) < this->chunkSize)
+                chunkData.resize(fileLength - input.tellg() / sizeof(T));
+            std::cout << chunkData.size() << std::endl;
             readChunkFromFileToVec(chunkData, input);
             mergeSortMT(chunkData);
             std::string tmpName = std::tmpnam(nullptr);
