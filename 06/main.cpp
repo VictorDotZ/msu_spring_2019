@@ -22,8 +22,8 @@ void merge(std::vector<T>& array, size_t left, size_t mid, size_t right) {
         }
     }
 
-    std::memcpy(&result[it1 + it2], &array[left + it1], (mid - left - it1) * sizeof(array[0]));
-    std::memcpy(&result[mid - left + it2], &array[mid + it2], (right - mid - it2) * sizeof(array[0]));
+    std::memcpy(&result[it1 + it2], &array[left + it1], (mid - left - it1) * sizeof(T));
+    std::memcpy(&result[mid - left + it2], &array[mid + it2], (right - mid - it2) * sizeof(T));
     std::memcpy(&array[left], &result[0], result.size() * sizeof(T));
 }
 
@@ -42,8 +42,8 @@ void mergeSortMT(std::vector<T>& array) {
     std::vector<T> leftHalf(mid);
     std::vector<T> rightHalf(array.size() - mid);
 
-    std::memcpy(&leftHalf[0], &array[0], leftHalf.size() * sizeof(array[0]));
-    std::memcpy(&rightHalf[0], &array[mid], rightHalf.size() * sizeof(array[0]));
+    std::memcpy(&leftHalf[0], &array[0], leftHalf.size() * sizeof(T));
+    std::memcpy(&rightHalf[0], &array[mid], rightHalf.size() * sizeof(T));
 
     std::thread sortLeft(mergeSort<T>, std::ref(leftHalf));
     std::thread sortRight(mergeSort<T>, std::ref(rightHalf));
@@ -72,18 +72,14 @@ public:
     }
 
     ~FileSort() {
-        while (!this->sortedChunkFilenames.empty()) {
-            std::string fileName = this->sortedChunkFilenames.top();
-            this->sortedChunkFilenames.pop();
-            std::remove((tmpPath + fileName).c_str());
-        }
+        clearTmp();
     }
 
 private:
 
     void readChunkFromFileToVec(std::vector<T>& chunkData, std::ifstream& input) {
-        input.read(reinterpret_cast<char *>(&chunkData[0]),
-                   chunkData.size() * sizeof(chunkData[0]));
+        input.read(reinterpret_cast<char *>(chunkData.data()),
+                   chunkData.size() * sizeof(T));
     }
 
     void writeChunkFromVecToFile(std::vector<T>& chunkData,
@@ -91,14 +87,14 @@ private:
         std::ofstream output(outputPathLocal, std::ios::binary);
         if (!output.is_open()) {
             output.close();
-            this->~FileSort();
+            clearTmp();
             throw std::runtime_error("file open error");
         }
-        output.write(reinterpret_cast<const char *>(&chunkData[0]),
-                     chunkData.size() * sizeof(chunkData[0]));
+        output.write(reinterpret_cast<const char *>(chunkData.data()),
+                     chunkData.size() * sizeof(T));
         if (!output.good()) {
             output.close();
-            this->~FileSort();
+            clearTmp();
             throw std::runtime_error("Write to disk error");
         }
         output.close();
@@ -125,7 +121,7 @@ private:
         }
         if (!input.good()) {
             input.close();
-            this->~FileSort();
+            clearTmp();
             throw std::runtime_error("Invalid input");
         }
         input.close();
@@ -141,7 +137,7 @@ private:
             if (!candidate.is_open() || !output.is_open()) {
                 candidate.close();
                 output.close();
-                this->~FileSort();
+                clearTmp();
                 throw std::runtime_error("process error");
             }
 
@@ -154,7 +150,7 @@ private:
             if (!candidate.eof()) {
                 candidate.close();
                 output.close();
-                this->~FileSort();
+                clearTmp();
                 throw std::runtime_error("process error");
             }
 
@@ -215,7 +211,7 @@ private:
             candidate1.close();
             candidate2.close();
             output.close();
-            this->~FileSort();
+            clearTmp();
             throw std::runtime_error("File reading error");
         }
         candidate1.read(reinterpret_cast<char *>(&value1), sizeof(value1));
@@ -242,7 +238,7 @@ private:
             candidate1.close();
             candidate2.close();
             output.close();
-            this->~FileSort();
+            clearTmp();
             throw std::runtime_error("File merge error");
         }
 
@@ -251,12 +247,21 @@ private:
         output.close();
     }
 
+    void clearTmp() {
+        while (!this->sortedChunkFilenames.empty()) {
+            std::string fileName = this->sortedChunkFilenames.top();
+            this->sortedChunkFilenames.pop();
+            std::remove((tmpPath + fileName).c_str());
+        }
+    }
+
     const std::string tmpPath = "/var";
     const std::string inputPath_;
     const std::string outputPath_;
     const size_t chunkSize;
     std::stack<std::string> sortedChunkFilenames;
 };
+
 
 int main()
 {
