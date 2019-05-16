@@ -67,12 +67,21 @@ public:
                                        chunkSize(chunkSize) {}
 
     void startSorting() {
-        createSortedChunks();
-        mergeSortedChunks();
+        try {
+            createSortedChunks();
+            mergeSortedChunks();
+        }
+        catch (std::runtime_error& ex) {
+            std::cerr << ex.what();
+        }
     }
 
     ~FileSort() {
-        clearTmp();
+        while (!this->sortedChunkFilenames.empty()) {
+            std::string fileName = this->sortedChunkFilenames.top();
+            this->sortedChunkFilenames.pop();
+            std::remove((tmpPath + fileName).c_str());
+        }
     }
 
 private:
@@ -87,14 +96,12 @@ private:
         std::ofstream output(outputPathLocal, std::ios::binary);
         if (!output.is_open()) {
             output.close();
-            clearTmp();
             throw std::runtime_error("file open error");
         }
         output.write(reinterpret_cast<const char *>(chunkData.data()),
                      chunkData.size() * sizeof(T));
         if (!output.good()) {
             output.close();
-            clearTmp();
             throw std::runtime_error("Write to disk error");
         }
         output.close();
@@ -121,7 +128,6 @@ private:
         }
         if (!input.good()) {
             input.close();
-            clearTmp();
             throw std::runtime_error("Invalid input");
         }
         input.close();
@@ -137,7 +143,6 @@ private:
             if (!candidate.is_open() || !output.is_open()) {
                 candidate.close();
                 output.close();
-                clearTmp();
                 throw std::runtime_error("process error");
             }
 
@@ -150,7 +155,6 @@ private:
             if (!candidate.eof()) {
                 candidate.close();
                 output.close();
-                clearTmp();
                 throw std::runtime_error("process error");
             }
 
@@ -211,7 +215,6 @@ private:
             candidate1.close();
             candidate2.close();
             output.close();
-            clearTmp();
             throw std::runtime_error("File reading error");
         }
         candidate1.read(reinterpret_cast<char *>(&value1), sizeof(value1));
@@ -238,21 +241,12 @@ private:
             candidate1.close();
             candidate2.close();
             output.close();
-            clearTmp();
             throw std::runtime_error("File merge error");
         }
 
         candidate1.close();
         candidate2.close();
         output.close();
-    }
-
-    void clearTmp() {
-        while (!this->sortedChunkFilenames.empty()) {
-            std::string fileName = this->sortedChunkFilenames.top();
-            this->sortedChunkFilenames.pop();
-            std::remove((tmpPath + fileName).c_str());
-        }
     }
 
     const std::string tmpPath = "/var";
