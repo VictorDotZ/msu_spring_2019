@@ -72,7 +72,7 @@ public:
             mergeSortedChunks();
         }
         catch (std::runtime_error& ex) {
-            std::cerr << ex.what();
+            std::cerr << ex.what() << '\n';
         }
     }
 
