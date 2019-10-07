@@ -1,3 +1,13 @@
+/*
+ * Простой сериализатор поддерживающий два типа: uint64_t и bool.
+ * 
+ * Сериализовать в текстовый вид с разделением пробелом,
+ * bool сериализуется как true и false
+ *
+ * Deserializer реализуется аналогично Serializer,
+ * только принимает std::istream, а не std::ostream
+ */
+
 #pragma once
 
 enum class Error
